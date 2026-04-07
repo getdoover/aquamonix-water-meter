@@ -1,6 +1,15 @@
 {
-    "simulator_app_key": "sim_app_key",
-    "digital_input_count": 1,
-    "digital_output_count": 2,
-    "a_funny_message": "yeeha"
+    "modbus_id": 1,
+    "meter_name": "default",
+    "max_flow": 100,
+    "allow_shutdown": true,
+    "stay_online_seconds": 120,
+    "shutdown_sleep_seconds": 900,
+    "position": 50,
+    "modbus_config": {
+        "name": "default",
+        "bus_type": "tcp",
+        "tcp_uri": "127.0.0.1:5020",
+        "tcp_timeout": 1
+    }
 }
