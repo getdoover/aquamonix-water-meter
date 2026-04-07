@@ -75,9 +75,6 @@ class AquamonixWaterMeterUI(ui.UI):
                 "Comms Active",
                 value=AquamonixWaterMeterTags.comms_active,
             ),
-            ui.DatetimeInput("Last Battery Changed"),
-            ui.DatetimeInput("New Battery Due"),
-            ui.TextInput("Service Notes", is_text_area=True),
         ],
         is_collapsed=True,
     )
