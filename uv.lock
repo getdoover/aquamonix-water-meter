@@ -140,7 +140,7 @@ wheels = [
 ]
 
 [[package]]
-name = "aquamonix-flow-meter"
+name = "aquamonix-water-meter"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [

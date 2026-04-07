@@ -1,5 +1,5 @@
 [project]
-name = "aquamonix-flow-meter"
+name = "aquamonix-water-meter"
 version = "0.1.0"
 description = "Aquamonix Water Meter application for monitoring water flow and throughput"
 readme = "README.md"
