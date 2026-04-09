@@ -1,13 +1,13 @@
 services:
-  device_agent:
-    image: spaneng/doover_device_agent:apps
-    ports:
-      - 50051:50051
-
-  modbus_iface:
-    image: spaneng/doover_modbus_iface
-    network_mode: host
-
+#  device_agent:
+#    image: spaneng/doover_device_agent:apps
+#    ports:
+#      - 50051:50051
+#
+#  modbus_iface:
+#    image: spaneng/doover_modbus_iface
+#    network_mode: host
+#
   aquamonix_sim:
     build: ./aquamonix_sim
     network_mode: host
@@ -16,10 +16,10 @@ services:
     build: ../
     network_mode: host
     restart: unless-stopped
-    depends_on:
-      - device_agent
-      - modbus_iface
-      - aquamonix_sim
+#    depends_on:
+#      - device_agent
+#      - modbus_iface
+#      - aquamonix_sim
     environment:
       - APP_KEY=test_app_key
       - CONFIG_FP=/app/simulators/app_config.json

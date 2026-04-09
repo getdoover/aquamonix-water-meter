@@ -152,7 +152,7 @@ class AquamonixWaterMeterApplication(Application):
             return
 
         log.debug("Sending modbus request")
-        result = await self.modbus_iface.read_registers_async(
+        result = await self.modbus_iface.read_registers(
             bus_id=self.config.modbus_config.name.value,
             modbus_id=self.config.modbus_id.value,
             start_address=START_REG_NUM,
