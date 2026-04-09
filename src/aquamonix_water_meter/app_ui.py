@@ -109,3 +109,11 @@ class AquamonixWaterMeterUI(
         ]
 
         self.tabs.event.shutdown_counter.hidden = not self.config.allow_shutdown.value
+
+def export():
+    # from pathlib import Path
+    # AquamonixWaterMeterUI.export(
+    #     Path(__file__).parents[2] / "doover_config.json",
+    #     "aquamonix_water_meter",
+    # )
+    pass

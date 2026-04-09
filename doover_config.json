@@ -17,7 +17,6 @@
         "organisation_id": null,
         "container_registry_profile_id": "93955828574386692",
         "build_args": "--platform linux/amd64,linux/arm64",
-        "export_ui_command": "NO_EXPORT",
         "config_schema": {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "",
