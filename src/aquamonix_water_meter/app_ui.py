@@ -4,47 +4,64 @@ from .app_config import AquamonixWaterMeterConfig
 from .app_tags import AquamonixWaterMeterTags
 
 
-class AquamonixWaterMeterUI(ui.UI):
+class AquamonixWaterMeterUI(
+    ui.UI, display_name=AquamonixWaterMeterTags.app_display_name
+):
     config: AquamonixWaterMeterConfig
 
-    flow = ui.NumericVariable(
-        "Flow",
-        units="ML/day",
-        value=AquamonixWaterMeterTags.last_flow,
-        form=ui.Widget.radial,
+    tabs = ui.TabContainer(
+        display_name="Tabs",
+        children=[
+            ui.Container(
+                "Meter",
+                children=[
+                    ui.NumericVariable(
+                        "Flow",
+                        units="ML/day",
+                        value=AquamonixWaterMeterTags.last_flow,
+                        form=ui.Widget.radial,
+                    ),
+                    ui.NumericVariable(
+                        "Meter Total",
+                        units="ML",
+                        value=AquamonixWaterMeterTags.last_total,
+                    ),
+                    ui.Timestamp(
+                        "Last Read",
+                        value=AquamonixWaterMeterTags.time_last_update,
+                    ),
+                    ui.Button("Get Now"),
+                ],
+            ),
+            ui.Container(
+                "Event",
+                children=[
+                    ui.NumericVariable(
+                        "This Event",
+                        units="ML",
+                        value=AquamonixWaterMeterTags.last_event_counter,
+                    ),
+                    ui.FloatInput(
+                        "Send Alert At",
+                        name="alert_counter",
+                        units="ML",
+                        min_val=0,
+                        help_str="Send a notification when event total reaches this value (ML)",
+                        default=None,
+                    ),
+                    ui.FloatInput(
+                        "Shutdown Pump At",
+                        name="shutdown_counter",
+                        units="ML",
+                        min_val=0,
+                        help_str="Stop pumping when event total reaches this value (ML)",
+                        default=None,
+                    ),
+                    ui.Button("Reset Event", requires_confirm=True),
+                ],
+            ),
+        ]
     )
-
-    this_event = ui.NumericVariable(
-        "This Event",
-        units="ML",
-        value=AquamonixWaterMeterTags.last_event_counter,
-    )
-
-    alert_counter = ui.FloatInput(
-        "Alert Counter",
-        min_val=0,
-        help_str="Send a notification when event total reaches this value (ML)",
-    )
-
-    shutdown_counter = ui.FloatInput(
-        "Shutdown Counter",
-        min_val=0,
-        help_str="Stop pumping when event total reaches this value (ML)",
-    )
-
-    reset_event = ui.Button("Reset Event", requires_confirm=True)
-
-    meter_total = ui.NumericVariable(
-        "Meter Total (ML)",
-        value=AquamonixWaterMeterTags.last_total,
-    )
-
-    last_read = ui.Timestamp(
-        "Last Read",
-        value=AquamonixWaterMeterTags.time_last_update,
-    )
-
-    get_now = ui.Button("Get Now")
 
     maintenance = ui.Submodule(
         "Maintenance",
@@ -81,13 +98,14 @@ class AquamonixWaterMeterUI(ui.UI):
 
     async def setup(self):
         max_flow = self.config.max_flow.value
+        print(dir(self.tabs.meter))
 
-        for elem in (self.flow, self.this_event, self.meter_total):
+        for elem in (self.tabs.meter.flow, self.tabs.meter.meter_total, self.tabs.event.this_event):
             elem.precision = 1 if max_flow >= 100 else 2
 
-        self.flow.ranges = [
+        self.tabs.meter.flow.ranges = [
             ui.Range(None, 0, max_flow * 0.15, ui.Colour.blue),
             ui.Range(None, max_flow * 0.15, max_flow, ui.Colour.green),
         ]
 
-        self.shutdown_counter.hidden = not self.config.allow_shutdown.value
+        self.tabs.event.shutdown_counter.hidden = not self.config.allow_shutdown.value

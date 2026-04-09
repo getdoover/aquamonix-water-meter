@@ -21,6 +21,4 @@ services:
 #      - modbus_iface
 #      - aquamonix_sim
     environment:
-      - APP_KEY=test_app_key
-      - CONFIG_FP=/app/simulators/app_config.json
-      - DDA_URI=127.0.0.1:50051
+      - APP_KEY=aquamonix_water_meter_1

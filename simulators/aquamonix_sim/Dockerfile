@@ -7,11 +7,12 @@ WORKDIR /app
 RUN uv venv
 
 COPY pyproject.toml .
-RUN uv pip install pymodbus>=3.9.2 transitions>=0.9.2
+RUN uv sync
 
 COPY . /app
 
 FROM python:3.11-slim AS final_image
 COPY --from=builder /app /app
+WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT ["python", "main.py"]

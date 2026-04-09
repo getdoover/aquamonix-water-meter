@@ -22,3 +22,5 @@ class AquamonixWaterMeterTags(Tags):
     alert_triggered = Tag("boolean", default=False)
     alert_message_short = Tag("string", default=None)
     alert_message_long = Tag("string", default=None)
+
+    app_display_name = Tag("string", default="Aquamonix Water Meter")

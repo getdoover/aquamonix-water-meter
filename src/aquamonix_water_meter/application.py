@@ -35,17 +35,12 @@ class AquamonixWaterMeterApplication(Application):
         self.prev_non_null_flow = None
         self.last_non_null_flow = None
 
-        self.last_loop_start: float = time.time()
-
         self.last_record: Record | None = None
         self.last_request_time: float = 0
         self.min_request_interval = 10
 
     async def main_loop(self):
-        log.info(f"Last loop = {time.time() - self.last_loop_start} seconds")
-        log.info(f"State: {self.state.state}")
-        self.last_loop_start = time.time()
-
+        log.info(f"State: {self.state.state}, Flow: {self.last_flow}")
         # Update display name with current flow
         if self.last_flow is not None:
             if self.last_flow == 0:
@@ -77,11 +72,7 @@ class AquamonixWaterMeterApplication(Application):
                 if self.last_record and self.last_record.is_ready:
                     await self.state.initialised()
             case "awake_rt":
-                result = await self._send_request()
-                if result:
-                    self.last_flow = result.current_flow
-                    self.prev_non_null_flow = self.last_non_null_flow
-                    self.last_non_null_flow = self.last_flow
+                await self._send_request()
 
         # Update counter tracking
         if self.last_record is not None:
@@ -108,7 +99,7 @@ class AquamonixWaterMeterApplication(Application):
         await self.tags.last_batt_volts.set(self.last_record.battery_volts)
         await self.tags.last_solar_volts.set(self.last_record.solar_volts)
         await self.tags.last_total.set(self.last_record.total)
-        await self.tags.time_last_update.set(int(time.time() - self.last_record.ts))
+        await self.tags.time_last_update.set(int(time.time() * 1000))
 
         total = self.last_record.total
         counter_zero = self.tags.last_event_counter_zero.value
@@ -116,7 +107,7 @@ class AquamonixWaterMeterApplication(Application):
             await self.tags.last_event_counter.set(total - counter_zero)
 
     async def _check_for_total_alert(self):
-        threshold = self.ui.alert_counter.value
+        threshold = self.ui_manager.get_value("alert_counter")
         if self._counter_exceeds(threshold):
             await self.create_message(
                 "notifications",
@@ -127,13 +118,13 @@ class AquamonixWaterMeterApplication(Application):
                     )
                 },
             )
-            await self.ui.alert_counter.set(None)
+            await self.ui_manager.set_value("alert_counter", None)
 
     async def _check_for_pump_shutdown(self):
         if not self.config.allow_shutdown.value:
             return
 
-        threshold = self.ui.shutdown_counter.value
+        threshold = self.ui_manager.get_value("shutdown_counter")
         if self._counter_exceeds(threshold):
             log.info(
                 f"Water meter {self.app_display_name} has reached "
@@ -144,7 +135,7 @@ class AquamonixWaterMeterApplication(Application):
             await self.tags.alert_message_long.set(
                 ALERT_MESSAGE_LONG.format(threshold)
             )
-            await self.ui.shutdown_counter.set(None)
+            await self.ui_manager.set_value("shutdown_counter", None)
 
     async def _send_request(self):
         if time.time() - self.last_request_time < self.min_request_interval:
@@ -152,19 +143,27 @@ class AquamonixWaterMeterApplication(Application):
             return
 
         log.debug("Sending modbus request")
-        result = await self.modbus_iface.read_registers(
-            bus_id=self.config.modbus_config.name.value,
-            modbus_id=self.config.modbus_id.value,
-            start_address=START_REG_NUM,
-            num_registers=NUM_REGS,
-            register_type=REGISTER_TYPE,
-        )
-        if not result:
-            log.info("Failed to send modbus request")
+        try:
+            result = await self.modbus_iface.read_registers(
+                bus_id=self.config.modbus_config.name.value,
+                modbus_id=self.config.modbus_id.value,
+                start_address=START_REG_NUM,
+                num_registers=NUM_REGS,
+                register_type=REGISTER_TYPE,
+            )
+        except Exception as e:
+            log.info(f"Failed to send modbus request: {e}")
             return
 
+        log.info(f"Got result: {result}")
         self.last_record = Record(result)
         self.last_request_time = time.time()
+
+        self.last_flow = self.last_record.current_flow
+        log.info(f"last fow: {self.last_flow}")
+        self.prev_non_null_flow = self.last_non_null_flow
+        self.last_non_null_flow = self.last_flow
+
         return self.last_record
 
     def _counter_exceeds(self, value):
@@ -204,8 +203,8 @@ class AquamonixWaterMeterApplication(Application):
         )
         await self.tags.last_event_counter_zero.set(total)
 
-        await self.ui.alert_counter.set(None)
-        await self.ui.shutdown_counter.set(None)
+        await self.ui_manager.set_value("alert_counter", None)
+        await self.ui_manager.set_value("shutdown_counter", None)
 
     @ui.handler("get_now")
     async def on_get_now(self, ctx, value):

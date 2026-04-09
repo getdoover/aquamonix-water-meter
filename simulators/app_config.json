@@ -7,7 +7,7 @@
     "shutdown_sleep_seconds": 900,
     "position": 50,
     "modbus_config": {
-        "name": "default",
+        "name": "sim",
         "bus_type": "tcp",
         "tcp_uri": "127.0.0.1:5020",
         "tcp_timeout": 1

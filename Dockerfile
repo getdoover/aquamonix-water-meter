@@ -13,6 +13,7 @@ ENV UV_PYTHON_DOWNLOADS=0
 WORKDIR /app
 
 # give the app access to our pipenv installed packages
+RUN apt update && apt install -y git
 RUN uv venv --system-site-packages
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
