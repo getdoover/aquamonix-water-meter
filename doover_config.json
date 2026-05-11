@@ -81,9 +81,9 @@
                     "default": 900,
                     "x-position": 4
                 },
-                "dv-app-position": {
+                "dv_app_position": {
                     "title": "Position",
-                    "x-name": "dv-app-position",
+                    "x-name": "dv_app_position",
                     "x-hidden": true,
                     "type": [
                         "integer",
@@ -263,6 +263,224 @@
                 "max_flow",
                 "modbus_config"
             ]
+        },
+        "ui_schema": {
+            "displayString": "$tag.app().app_display_name:string:\"Aquamonix Water Meter\"",
+            "hidden": "$config.app().hidden:boolean:false:boolean:false",
+            "position": "$config.app().dv_app_position:number:100",
+            "icon": null,
+            "colour": null,
+            "defaultOpen": "$config.app().dv_app_default_open:boolean",
+            "type": "uiApplication",
+            "name": "$config.app().APP_KEY",
+            "children": {
+                "tabs": {
+                    "name": "tabs",
+                    "type": "uiTabs",
+                    "displayString": "Tabs",
+                    "showActivity": true,
+                    "position": 61,
+                    "hidden": false,
+                    "children": {
+                        "meter": {
+                            "name": "meter",
+                            "type": "uiContainer",
+                            "displayString": "Meter",
+                            "showActivity": true,
+                            "position": 55,
+                            "hidden": false,
+                            "children": {
+                                "flow": {
+                                    "name": "flow",
+                                    "type": "uiVariable",
+                                    "displayString": "Flow",
+                                    "showActivity": true,
+                                    "form": "radialGauge",
+                                    "position": 51,
+                                    "hidden": false,
+                                    "units": "ML/day",
+                                    "varType": "float",
+                                    "currentValue": "$tag.app().last_flow:number:null"
+                                },
+                                "meter_total": {
+                                    "name": "meter_total",
+                                    "type": "uiVariable",
+                                    "displayString": "Meter Total",
+                                    "showActivity": true,
+                                    "position": 52,
+                                    "hidden": false,
+                                    "units": "ML",
+                                    "varType": "float",
+                                    "currentValue": "$tag.app().last_total:number:null"
+                                },
+                                "last_read": {
+                                    "name": "last_read",
+                                    "type": "uiTimestamp",
+                                    "displayString": "Last Read",
+                                    "showActivity": true,
+                                    "position": 53,
+                                    "hidden": false,
+                                    "varType": "timestamp",
+                                    "currentValue": "$tag.app().time_last_update:number:null"
+                                },
+                                "get_now": {
+                                    "name": "get_now",
+                                    "type": "uiButton",
+                                    "displayString": "Get Now",
+                                    "position": 54,
+                                    "hidden": false,
+                                    "currentValue": "$cmds.app().get_now"
+                                }
+                            }
+                        },
+                        "event": {
+                            "name": "event",
+                            "type": "uiContainer",
+                            "displayString": "Event",
+                            "showActivity": true,
+                            "position": 60,
+                            "hidden": false,
+                            "children": {
+                                "this_event": {
+                                    "name": "this_event",
+                                    "type": "uiVariable",
+                                    "displayString": "This Event",
+                                    "showActivity": true,
+                                    "position": 56,
+                                    "hidden": false,
+                                    "units": "ML",
+                                    "varType": "float",
+                                    "currentValue": "$tag.app().last_event_counter:number:null"
+                                },
+                                "alert_counter": {
+                                    "name": "alert_counter",
+                                    "type": "uiFloatInput",
+                                    "displayString": "Send Alert At",
+                                    "helpString": "Send a notification when event total reaches this value (ML)",
+                                    "position": 57,
+                                    "hidden": false,
+                                    "units": "ML",
+                                    "currentValue": "$cmds.app().alert_counter::None",
+                                    "default": null,
+                                    "min": 0
+                                },
+                                "shutdown_counter": {
+                                    "name": "shutdown_counter",
+                                    "type": "uiFloatInput",
+                                    "displayString": "Shutdown Pump At",
+                                    "helpString": "Stop pumping when event total reaches this value (ML)",
+                                    "position": 58,
+                                    "hidden": false,
+                                    "units": "ML",
+                                    "currentValue": "$cmds.app().shutdown_counter::None",
+                                    "default": null,
+                                    "min": 0
+                                },
+                                "reset_event": {
+                                    "name": "reset_event",
+                                    "type": "uiButton",
+                                    "displayString": "Reset Event",
+                                    "position": 59,
+                                    "hidden": false,
+                                    "currentValue": "$cmds.app().reset_event",
+                                    "requiresConfirm": true
+                                }
+                            }
+                        }
+                    }
+                },
+                "maintenance": {
+                    "name": "maintenance",
+                    "type": "uiSubmodule",
+                    "displayString": "Maintenance",
+                    "showActivity": true,
+                    "position": 65,
+                    "hidden": false,
+                    "children": {
+                        "battery": {
+                            "name": "battery",
+                            "type": "uiVariable",
+                            "displayString": "Battery",
+                            "showActivity": true,
+                            "position": 62,
+                            "hidden": false,
+                            "units": "V",
+                            "varType": "float",
+                            "currentValue": "$tag.app().last_batt_volts:number:null",
+                            "decPrecision": 1,
+                            "ranges": [
+                                {
+                                    "min": 11.5,
+                                    "max": 12.3,
+                                    "colour": "yellow",
+                                    "show_on_graph": true,
+                                    "label": "Low"
+                                },
+                                {
+                                    "min": 12.3,
+                                    "max": 13.0,
+                                    "colour": "blue",
+                                    "show_on_graph": true,
+                                    "label": "Good"
+                                },
+                                {
+                                    "min": 13.0,
+                                    "max": 14.0,
+                                    "colour": "green",
+                                    "show_on_graph": true,
+                                    "label": "Charging"
+                                },
+                                {
+                                    "min": 14.0,
+                                    "max": 14.5,
+                                    "colour": "red",
+                                    "show_on_graph": true,
+                                    "label": "OverCharging"
+                                }
+                            ]
+                        },
+                        "solar": {
+                            "name": "solar",
+                            "type": "uiVariable",
+                            "displayString": "Solar",
+                            "showActivity": true,
+                            "position": 63,
+                            "hidden": false,
+                            "units": "V",
+                            "varType": "float",
+                            "currentValue": "$tag.app().last_solar_volts:number:null",
+                            "decPrecision": 1,
+                            "ranges": [
+                                {
+                                    "min": 0,
+                                    "max": 14.0,
+                                    "colour": "blue",
+                                    "show_on_graph": true,
+                                    "label": "Low"
+                                },
+                                {
+                                    "min": 14.0,
+                                    "max": 25,
+                                    "colour": "green",
+                                    "show_on_graph": true,
+                                    "label": "Charging"
+                                }
+                            ]
+                        },
+                        "comms_active": {
+                            "name": "comms_active",
+                            "type": "uiVariable",
+                            "displayString": "Comms Active",
+                            "showActivity": true,
+                            "position": 64,
+                            "hidden": false,
+                            "varType": "bool",
+                            "currentValue": "$tag.app().comms_active:boolean:false"
+                        }
+                    },
+                    "defaultOpen": false
+                }
+            }
         }
     }
 }

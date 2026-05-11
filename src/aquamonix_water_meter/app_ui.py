@@ -60,7 +60,7 @@ class AquamonixWaterMeterUI(
                     ui.Button("Reset Event", requires_confirm=True),
                 ],
             ),
-        ]
+        ],
     )
 
     maintenance = ui.Submodule(
@@ -98,9 +98,12 @@ class AquamonixWaterMeterUI(
 
     async def setup(self):
         max_flow = self.config.max_flow.value
-        print(dir(self.tabs.meter))
 
-        for elem in (self.tabs.meter.flow, self.tabs.meter.meter_total, self.tabs.event.this_event):
+        for elem in (
+            self.tabs.meter.flow,
+            self.tabs.meter.meter_total,
+            self.tabs.event.this_event,
+        ):
             elem.precision = 1 if max_flow >= 100 else 2
 
         self.tabs.meter.flow.ranges = [
@@ -110,10 +113,11 @@ class AquamonixWaterMeterUI(
 
         self.tabs.event.shutdown_counter.hidden = not self.config.allow_shutdown.value
 
+
 def export():
-    # from pathlib import Path
-    # AquamonixWaterMeterUI.export(
-    #     Path(__file__).parents[2] / "doover_config.json",
-    #     "aquamonix_water_meter",
-    # )
-    pass
+    from pathlib import Path
+
+    AquamonixWaterMeterUI(None, None, None).export(
+        Path(__file__).parents[2] / "doover_config.json",
+        "aquamonix_water_meter",
+    )
