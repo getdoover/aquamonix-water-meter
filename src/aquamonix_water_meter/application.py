@@ -156,6 +156,12 @@ class AquamonixWaterMeterApplication(Application):
             return
 
         log.info(f"Got result: {result}")
+        if result is None:
+            # read_registers returns None (rather than raising) when the bus
+            # is unavailable, e.g. while the modbus interface is reconfiguring
+            log.info("Modbus read returned no data, keeping last record")
+            return
+
         self.last_record = Record(result)
         self.last_request_time = time.time()
 
