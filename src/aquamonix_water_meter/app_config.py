@@ -19,6 +19,15 @@ class AquamonixWaterMeterConfig(config.Schema):
         description="Allow shutdown of the pump",
         default=True,
     )
+    motor_control_app = config.ApplicationInstall(
+        "Pump Control App",
+        name="motor_control_app",
+        default="",
+        description="The motor control install on this device to send a 'stop' "
+        "RPC to when the shutdown target is reached, e.g. "
+        "'motor_control_3_wire_1'. Leaving it empty sends the stop to every app "
+        "on the device that handles one. Only used when Allow Shutdown is on.",
+    )
     stay_online_seconds = config.Integer(
         "Stay Online Seconds",
         description="Time to stay online in seconds",

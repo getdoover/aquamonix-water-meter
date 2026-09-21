@@ -38,6 +38,7 @@ This Doover App can be managed via the Doover CLI and installed onto devices thr
 | **Meter Name** | User-friendly display name for the meter | *required* |
 | **Max Flow** | Maximum expected flow rate for the meter (ML/day), used for gauge scaling | *required* |
 | **Allow Shutdown** | Enable the app to trigger pump shutdown when a volume target is reached | `true` |
+| **Pump Control App** | Install to send the `stop` RPC to on shutdown; blank reaches every app on the device handling `stop` | blank |
 | **Modbus Config** | Modbus connection settings (bus type, serial/TCP parameters) | serial defaults |
 
 <br/>
@@ -53,6 +54,14 @@ This app exposes the following tags for use by other applications (e.g. pump con
 | **alert_triggered** | boolean | Set to `true` when the pump shutdown volume target is exceeded |
 | **alert_message_short** | string | Short description of the shutdown reason |
 | **alert_message_long** | string | Detailed shutdown message including the volume reached |
+
+### RPC
+
+On reaching the pump shutdown target the app also calls `stop` on the default
+`dv-rpc` channel, with `{"reason": "..."}` naming the volume reached.
+This is what the **3-Wire Motor Control** app listens for. The tags above are
+set on the same event and are kept for pump apps that watch them instead --
+both fire, always, so nothing has to be migrated.
 
 ### Channels
 

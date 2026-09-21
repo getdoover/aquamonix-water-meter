@@ -1,7 +1,8 @@
+import asyncio
 import logging
 import time
 
-from pydoover import ui
+from pydoover import rpc, ui
 from pydoover.docker import Application
 
 from .app_config import AquamonixWaterMeterConfig
@@ -18,6 +19,8 @@ REGISTER_TYPE = 4
 
 ALERT_MESSAGE = "by water meter target"
 ALERT_MESSAGE_LONG = "after the meter reached {}ML"
+
+MOTOR_CONTROL_STOP_TIMEOUT = 30.0
 
 
 class AquamonixWaterMeterApplication(Application):
@@ -130,12 +133,49 @@ class AquamonixWaterMeterApplication(Application):
                 f"Water meter {self.app_display_name} has reached "
                 f"event shutdown target of {threshold}"
             )
+            # Two ways of saying the same thing. The tags are the original
+            # signal and older pump apps still watch them; the RPC is the one
+            # that gets an acknowledgement back. Both fire, always.
             await self.tags.alert_triggered.set(True)
             await self.tags.alert_message_short.set(ALERT_MESSAGE)
             await self.tags.alert_message_long.set(
                 ALERT_MESSAGE_LONG.format(threshold)
             )
+            asyncio.create_task(self._send_stop_rpc(threshold))
             await self.ui_manager.set_value("shutdown_counter", None)
+
+    async def _send_stop_rpc(self, threshold):
+        """Ask the pump control app to stop, and log whether it did.
+
+        Fired as a background task: the round trip is seconds long and the
+        main loop must not wait on a pump app that is slow, missing or
+        misconfigured. Never raises, for the same reason.
+        """
+        app_key = str(self.config.motor_control_app.value or "")
+        reason = f"{ALERT_MESSAGE} {ALERT_MESSAGE_LONG.format(threshold)}"
+
+        # On the shared dv-rpc channel an empty app key reaches every app on
+        # the device that handles "stop", so the install should be named.
+        if not app_key:
+            log.warning("No pump control app configured; stopping any 'stop' handler")
+
+        try:
+            result = await self.rpc.call(
+                "stop",
+                params={"reason": reason},
+                channel=rpc.DEFAULT_CHANNEL,
+                app_key=app_key,
+                timeout=MOTOR_CONTROL_STOP_TIMEOUT,
+            )
+        except Exception:
+            log.warning(
+                "Stop RPC to %s failed -- the alert tags were still set",
+                app_key or "every stop handler",
+                exc_info=True,
+            )
+            return
+
+        log.info("Stop RPC acknowledged by %s: %s", app_key or "listener", result)
 
     async def _send_request(self):
         if time.time() - self.last_request_time < self.min_request_interval:
