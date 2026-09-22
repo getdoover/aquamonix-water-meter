@@ -40,12 +40,18 @@ class AquamonixWaterMeterUI(
                         "This Event",
                         units="ML",
                         value=AquamonixWaterMeterTags.last_event_counter,
+                        icon="fa-solid fa-water",
+                        form=ui.Widget.linear,
+                        # Bounds are whatever targets the user has set, so they
+                        # come from a tag rather than this schema.
+                        ranges=AquamonixWaterMeterTags.event_ranges,
                     ),
                     ui.FloatInput(
                         "Send Alert At",
                         name="alert_counter",
                         units="ML",
                         min_val=0,
+                        icon="fa-solid fa-bell",
                         help_str="Send a notification when event total reaches this value (ML)",
                         default=None,
                     ),
@@ -54,6 +60,7 @@ class AquamonixWaterMeterUI(
                         name="shutdown_counter",
                         units="ML",
                         min_val=0,
+                        icon="fa-solid fa-power-off",
                         help_str="Stop pumping when event total reaches this value (ML)",
                         default=None,
                     ),

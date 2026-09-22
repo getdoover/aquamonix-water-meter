@@ -59,6 +59,7 @@ class AquamonixWaterMeterApplication(Application):
 
         # Update UI via tags
         await self._update_display_tags()
+        await self._update_event_ranges()
 
         # Spin state machine with battery voltage
         batt_volts = self.last_record and self.last_record.battery_volts
@@ -108,6 +109,49 @@ class AquamonixWaterMeterApplication(Application):
         counter_zero = self.tags.last_event_counter_zero.value
         if total is not None and counter_zero is not None:
             await self.tags.last_event_counter.set(total - counter_zero)
+
+    def _event_targets(self):
+        """The event targets the user has set, as (label, ML) pairs, ascending."""
+        targets = []
+
+        alert = self.ui_manager.get_value("alert_counter")
+        if alert:
+            targets.append(("Alert", alert))
+
+        if self.config.allow_shutdown.value:
+            shutdown = self.ui_manager.get_value("shutdown_counter")
+            if shutdown:
+                targets.append(("Shutdown", shutdown))
+
+        targets.sort(key=lambda target: target[1])
+        return targets
+
+    async def _update_event_ranges(self):
+        """Publish the event total's gauge segments, one per target.
+
+        Both targets set gives two segments, so the operator can see the alert
+        boundary partway along a bar that ends where the pump stops. One target
+        gives a single bar that fills as the event runs up to it, and no target
+        gives no segments at all, which the site renders as a plain reading.
+        """
+        ranges, lower, previous = [], 0, None
+
+        for label, value in self._event_targets():
+            if value <= lower:
+                # Both targets on the same total -- one segment says it all.
+                continue
+
+            ranges.append(
+                ui.Range(
+                    previous or f"Below {label}",
+                    lower,
+                    value,
+                    ui.Colour.green if previous is None else ui.Colour.yellow,
+                ).to_dict()
+            )
+            lower, previous = value, label
+
+        await self.tags.event_ranges.set(ranges)
 
     async def _check_for_total_alert(self):
         threshold = self.ui_manager.get_value("alert_counter")

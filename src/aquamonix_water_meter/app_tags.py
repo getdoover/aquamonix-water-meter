@@ -5,6 +5,10 @@ class AquamonixWaterMeterTags(Tags):
     # Display values (updated each loop from modbus readings)
     last_flow = Tag("number", default=None)
     last_event_counter = Tag("number", default=None)
+    # Gauge segments for the event total, one per target the user has set.
+    # Empty until the app says otherwise, which is what makes the reading fall
+    # back to a plain number on a device with no targets.
+    event_ranges = Tag("array", default=[])
     last_total = Tag("number", default=None)
     last_batt_volts = Tag("number", default=None)
     last_solar_volts = Tag("number", default=None)
