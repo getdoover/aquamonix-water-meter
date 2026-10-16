@@ -64,6 +64,12 @@ class AquamonixWaterMeterUI(
                         help_str="Stop pumping when event total reaches this value (ML)",
                         default=None,
                     ),
+                    ui.Timestamp(
+                        "Ends At",
+                        name="shutdown_eta",
+                        value=AquamonixWaterMeterTags.shutdown_eta,
+                        icon="fa-solid fa-hourglass-half",
+                    ),
                     ui.Button("Reset Event", requires_confirm=True),
                 ],
             ),
@@ -119,6 +125,7 @@ class AquamonixWaterMeterUI(
         ]
 
         self.tabs.event.shutdown_counter.hidden = not self.config.allow_shutdown.value
+        self.tabs.event.shutdown_eta.hidden = not self.config.allow_shutdown.value
 
 
 def export():

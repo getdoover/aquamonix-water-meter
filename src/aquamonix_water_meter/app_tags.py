@@ -21,6 +21,9 @@ class AquamonixWaterMeterTags(Tags):
 
     # User-set thresholds (set via UI handlers)
     shutdown_threshold = Tag("number", default=None)
+    # When the event will reach the shutdown target at the current flow, in
+    # ms since epoch. None while there's no target or the pump isn't running.
+    shutdown_eta = Tag("number", default=None)
 
     # Cross-app tags for pump control
     alert_triggered = Tag("boolean", default=False)

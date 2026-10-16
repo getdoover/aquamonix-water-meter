@@ -60,6 +60,7 @@ class AquamonixWaterMeterApplication(Application):
         # Update UI via tags
         await self._update_display_tags()
         await self._update_event_ranges()
+        await self._update_shutdown_eta()
 
         # Spin state machine with battery voltage
         batt_volts = self.last_record and self.last_record.battery_volts
@@ -152,6 +153,42 @@ class AquamonixWaterMeterApplication(Application):
             lower, previous = value, label
 
         await self.tags.event_ranges.set(ranges)
+
+    async def _update_shutdown_eta(self):
+        """Publish when the event will hit the shutdown target at today's flow.
+
+        A straight-line estimate from the remaining ML and the latest flow
+        reading, so it moves as the flow does. Cleared when there's nothing to
+        count down to: no target, no reading yet, or the pump isn't running.
+        """
+        eta = None
+
+        threshold = (
+            self.ui_manager.get_value("shutdown_counter")
+            if self.config.allow_shutdown.value
+            else None
+        )
+        total = self.last_record and self.last_record.total
+        counter_zero = self.tags.last_event_counter_zero.value
+
+        if (
+            threshold
+            and total is not None
+            and counter_zero is not None
+            and self.is_pumping
+            and self.last_flow
+        ):
+            remaining = max(threshold - (total - counter_zero), 0)
+            time_left_ms = remaining / self.last_flow * 86400 * 1000
+            eta = int(time.time() * 1000 + time_left_ms)
+
+            # Flow wobbles every reading, so only publish when the estimate
+            # has moved enough to matter -- otherwise the tag changes each loop.
+            current = self.tags.shutdown_eta.value
+            if current is not None and abs(eta - current) < max(60_000, time_left_ms * 0.01):
+                return
+
+        await self.tags.shutdown_eta.set(eta)
 
     async def _check_for_total_alert(self):
         threshold = self.ui_manager.get_value("alert_counter")
