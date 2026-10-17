@@ -64,7 +64,7 @@ class AquamonixWaterMeterApplication(Application):
 
         # Spin state machine with battery voltage
         batt_volts = self.last_record and self.last_record.battery_volts
-        await self.state.spin(batt_volts)
+        await self.state.spin(batt_volts, self._next_target_eta())
         if self.state.should_request:
             await self._send_request()
 
@@ -180,7 +180,9 @@ class AquamonixWaterMeterApplication(Application):
         ):
             remaining = max(threshold - (total - counter_zero), 0)
             time_left_ms = remaining / self.last_flow * 86400 * 1000
-            eta = int(time.time() * 1000 + time_left_ms)
+            # From the reading's own time, so the estimate holds still while
+            # the meter sleeps rather than creeping later every loop.
+            eta = int(self.last_record.ts * 1000 + time_left_ms)
 
             # Flow wobbles every reading, so only publish when the estimate
             # has moved enough to matter -- otherwise the tag changes each loop.
@@ -189,6 +191,31 @@ class AquamonixWaterMeterApplication(Application):
                 return
 
         await self.tags.shutdown_eta.set(eta)
+
+    def _next_target_eta(self):
+        """When the event will reach its nearest unreached target, in epoch seconds.
+
+        Projected from the latest reading and flow, so the meter can wake to
+        read just after the crossing instead of up to a full sleep later.
+        None while the pump isn't running or there's no target ahead.
+        """
+        record = self.last_record
+        counter_zero = self.tags.last_event_counter_zero.value
+        if record is None or record.total is None or counter_zero is None:
+            return None
+        if not (self.is_pumping and self.last_flow):
+            return None
+
+        event_total = record.total - counter_zero
+        remaining = [
+            value - event_total
+            for _, value in self._event_targets()
+            if value >= event_total
+        ]
+        if not remaining:
+            return None
+
+        return record.ts + min(remaining) / self.last_flow * 86400
 
     async def _check_for_total_alert(self):
         threshold = self.ui_manager.get_value("alert_counter")

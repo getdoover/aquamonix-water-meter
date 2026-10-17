@@ -1,4 +1,5 @@
 import logging
+import time
 
 from pydoover.state import StateMachine
 
@@ -6,6 +7,13 @@ from pydoover.state import StateMachine
 DEFAULT_SLEEP_TIME = 60 * 10.5  # 10.5 minutes
 DEFAULT_AWAKE_TIME = 60 * 1.5  # 1.5 minutes
 DEFAULT_WAKE_DELAY = 30  # 30 seconds
+
+# Waking early for an event target: read this long after the projected
+# crossing, never after less than this much sleep, and never on a meter
+# battery at or below this voltage.
+EARLY_WAKE_MARGIN = 60
+MIN_SLEEP_TIME = 60
+MIN_EARLY_WAKE_VOLTS = 12.0
 
 
 log = logging.getLogger(__name__)
@@ -56,17 +64,39 @@ class AquamonixWaterMeterState:
         )
 
         self.should_request = False
+        self.slept_at: float = 0
 
-    async def spin(self, battery_voltage: float):
+    async def spin(self, battery_voltage: float, wake_at: float | None = None):
+        """Advance the state machine.
+
+        ``wake_at`` is when the event is projected to reach its next target, in
+        epoch seconds. The sleep timeout is only read on entering the sleeping
+        state, so waking early for a target has to happen here instead.
+        """
         self.state_machine.get_state("sleeping").timeout = get_sleep_time(
             battery_voltage
         )
 
         if self.state == "initial":
             await self.initialise()
+        elif self.state == "sleeping" and self._should_wake_early(
+            battery_voltage, wake_at
+        ):
+            log.info("Waking early to read the meter as it reaches an event target")
+            await self.awaken()
+
+    def _should_wake_early(self, battery_voltage, wake_at) -> bool:
+        if wake_at is None or battery_voltage is None:
+            return False
+        if battery_voltage <= MIN_EARLY_WAKE_VOLTS:
+            return False
+
+        now = time.time()
+        return now - self.slept_at >= MIN_SLEEP_TIME and now >= wake_at + EARLY_WAKE_MARGIN
 
     async def on_enter_sleeping(self):
         self.should_request = False
+        self.slept_at = time.time()
 
     async def on_enter_awake_init(self):
         self.should_request = True
